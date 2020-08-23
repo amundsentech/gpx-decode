@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	"time"
+//	"time"
 )
 
 type GPX struct {
@@ -32,35 +32,29 @@ type Bounds struct {
 	Maxlon float64 `xml:"maxlon,attr" json:"maxlon,attr"`
 }
 
-type TrackPoint struct {
-	Lat  float64   `xml:"lat,attr" json:"lat,attr"`
-	Lon  float64   `xml:"lon,attr" json:"lon,attr"`
-	Ele  float64   `xml:"ele" json:"ele"`
-	Time time.Time `xml:"time" json:"time"`
+type Track struct {
+        Extensions   Extensions     `xml:"extensions" json:"extensions"`
+        Name         string         `xml:"name,omitempty" json:"name,omitempty"`
+        Description  string         `xml:"desc,omitempty" json:"desc,omitempty"`
+        TrackSegment []TrackSegment `xml:"trkseg" json:"trksed"`
 }
 
 type TrackSegment struct {
-	TrackPoint []TrackPoint `xml:"trkpt" json:"trkpt"`
-}
-
-type Track struct {
-	Extensions   Extensions     `xml:"extensions" json:"extensions"`
-	Name         string         `xml:"name,omitempty" json:"name,omitempty"`
-	Description  string         `xml:"desc,omitempty" json:"desc,omitempty"`
-	TrackSegment []TrackSegment `xml:"trkseg" json:"trksed"`
+	TrackPoint []LinePoint `xml:"trkpt" json:"trkpt"`
 }
 
 type Route struct {
 	Extensions  Extensions   `xml:"extensions" json:"extensions"`
 	Name        string       `xml:"name,omitempty" json:"name,omitempty"`
 	Description string       `xml:"desc,omitempty" json:"desc,omitempty"`
-	RoutePoints []RoutePoint `xml:"rtept" json:"rtept"`
+	RoutePoints []LinePoint `xml:"rtept" json:"rtept"`
 }
 
-type RoutePoint struct {
+type LinePoint struct {
 	Lat float64 `xml:"lat,attr" json:"lat,attr"`
 	Lon float64 `xml:"lon,attr" json:"lon,attr"`
 	Ele float64 `xml:"ele,omitempty" json:"ele,omitempty"`
+	Time     string     `xml:"time,omitempty" json:"time,omitempty"`
 }
 
 type Waypoint struct {
