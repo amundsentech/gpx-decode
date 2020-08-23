@@ -50,6 +50,6 @@ func TestGPX2Struct(t *testing.T) {
 
 		//fmt.Printf("Inbound reads like:\n%v\n", string(gpxbyte))
 		// what does it look like?
-		fmt.Printf("GPX struct as json reads:\n%v\n",   string(gpxjson))
+		fmt.Printf("GPX struct as json reads:\n%v\n", string(gpxjson))
 	}
 }

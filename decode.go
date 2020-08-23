@@ -44,7 +44,7 @@ type TrackSegment struct {
 }
 
 type Track struct {
-	Extensions   Extensions	    `xml:"extensions" json:"extensions"`
+	Extensions   Extensions     `xml:"extensions" json:"extensions"`
 	Name         string         `xml:"name,omitempty" json:"name,omitempty"`
 	Description  string         `xml:"desc,omitempty" json:"desc,omitempty"`
 	TrackSegment []TrackSegment `xml:"trkseg" json:"trksed"`
@@ -83,7 +83,7 @@ type OGR struct {
 	Value string `xml:",chardata" json:",chardata"`
 }
 
-func GPXDecode (f *bytes.Buffer, gpx *GPX) {
+func GPXDecode(f *bytes.Buffer, gpx *GPX) {
 
 	xmlraw, _ := ioutil.ReadAll(f)
 
@@ -114,20 +114,20 @@ func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 
 		case xml.StartElement:
 			// the next feature coming after this one will be an extension
-			if strings.Contains(se.Name.Local,"extensions") {
+			if strings.Contains(se.Name.Local, "extensions") {
 				isExt = 1
-				elementNum  ++
+				elementNum++
 				extNum = 0
 				continue
 			}
 
 			// Reached a new feature, so Reset extension counter and isExt boolean
-                        nonExt := []string{"metadata","wpt","trkpt","rtept","trkseg","lon","lat","ele","name","desc"}
-                        for _, substr := range nonExt {
-                                if strings.Contains(se.Name.Local,substr) {
-                                        isExt = 0
-                                }
-                        }
+			nonExt := []string{"metadata", "wpt", "trkpt", "rtept", "trkseg", "lon", "lat", "ele", "name", "desc"}
+			for _, substr := range nonExt {
+				if strings.Contains(se.Name.Local, substr) {
+					isExt = 0
+				}
+			}
 
 			// this feature is flagged as an extension (falls after prior)
 			if isExt == 1 {
@@ -156,7 +156,7 @@ func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 				}
 
 				// increase the counter
-				extNum ++
+				extNum++
 			}
 
 		}
