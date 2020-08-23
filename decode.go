@@ -44,14 +44,14 @@ type TrackSegment struct {
 }
 
 type Track struct {
-	//Extensions   []Ogr	    `xml:"ogr,attr" json:"type,attr"`
+	Extensions   Extensions	    `xml:"extensions" json:"extensions"`
 	Name         string         `xml:"name,omitempty" json:"name,omitempty"`
 	Description  string         `xml:"desc,omitempty" json:"desc,omitempty"`
 	TrackSegment []TrackSegment `xml:"trkseg" json:"trksed"`
 }
 
 type Route struct {
-	//Extensions  Extensions   `xml:"extensions" json:"extensions"`
+	Extensions  Extensions   `xml:"extensions" json:"extensions"`
 	Name        string       `xml:"name,omitempty" json:"name,omitempty"`
 	Description string       `xml:"desc,omitempty" json:"desc,omitempty"`
 	RoutePoints []RoutePoint `xml:"rtept" json:"rtept"`
@@ -103,7 +103,7 @@ func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 	elementNum := -1
 	extNum := 0
 
-	// parse each token, looking for extensionsy
+	// parse each token, looking for 'extensions'
 	for {
 		t, _ := d.Token()
 		if t == nil {
@@ -113,7 +113,7 @@ func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 		switch se := t.(type) {
 
 		case xml.StartElement:
-			// the next feature comming after will be an extension
+			// the next feature coming after this one will be an extension
 			if strings.Contains(se.Name.Local,"extensions") {
 				isExt = 1
 				elementNum  ++
@@ -140,9 +140,22 @@ func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 				}
 				ogr.Value = string(frag)
 
-				gpx.Waypoint[elementNum].Extensions.OGR[extNum].Key = ogr.Key
+				// is Point only
+				if gpx.Waypoint != nil && len(gpx.Waypoint) >= elementNum {
+					gpx.Waypoint[elementNum].Extensions.OGR[extNum].Key = ogr.Key
+				}
 
-				// roll the counter
+				// is Track
+				if gpx.Track != nil && len(gpx.Track[elementNum].Extensions.OGR) >= extNum {
+					gpx.Track[elementNum].Extensions.OGR[extNum].Key = ogr.Key
+				}
+
+				// is Route
+				if gpx.Route != nil && len(gpx.Route[elementNum].Extensions.OGR) >= extNum {
+					gpx.Route[elementNum].Extensions.OGR[extNum].Key = ogr.Key
+				}
+
+				// increase the counter
 				extNum ++
 			}
 

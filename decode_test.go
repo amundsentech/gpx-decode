@@ -20,9 +20,9 @@ func TestGPX2Struct(t *testing.T) {
 
 	// build a map of the testing data and inputs
 	data := make(map[string]string)
-	data[points3D] = points3D
+	//data[points3D] = points3D
 	//data[lines] = lines
-	//data[lines3D] = lines3D
+	data[lines3D] = lines3D
 
 	for item, fileloc := range data {
 
