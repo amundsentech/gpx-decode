@@ -3,6 +3,9 @@ package gpxdecode
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"strings"
 	"time"
 )
 
@@ -42,50 +45,108 @@ type TrackSegment struct {
 
 type Track struct {
 	//Extensions   []Ogr	    `xml:"ogr,attr" json:"type,attr"`
-	Name         string         `xml:"name" json:"name"`
-	Description  string         `xml:"desc" json:"desc"`
+	Name         string         `xml:"name,omitempty" json:"name,omitempty"`
+	Description  string         `xml:"desc,omitempty" json:"desc,omitempty"`
 	TrackSegment []TrackSegment `xml:"trkseg" json:"trksed"`
 }
 
 type Route struct {
 	//Extensions  Extensions   `xml:"extensions" json:"extensions"`
-	Name        string       `xml:"name" json:"name"`
-	Description string       `xml:"desc" json:"desc"`
+	Name        string       `xml:"name,omitempty" json:"name,omitempty"`
+	Description string       `xml:"desc,omitempty" json:"desc,omitempty"`
 	RoutePoints []RoutePoint `xml:"rtept" json:"rtept"`
 }
 
 type RoutePoint struct {
 	Lat float64 `xml:"lat,attr" json:"lat,attr"`
 	Lon float64 `xml:"lon,attr" json:"lon,attr"`
-	Ele float64 `xml:"ele" json:"ele"`
+	Ele float64 `xml:"ele,omitempty" json:"ele,omitempty"`
 }
 
 type Waypoint struct {
 	Extensions  Extensions `xml:"extensions" json:"extensions"`
-	Name        string     `xml:"name" json:"name"`
-	Description string     `xml:"desc" json:"desc"`
+	Name        string     `xml:"name,omitempty" json:"name,omitempty"`
+	Description string     `xml:"desc,omitempty" json:"desc,omitempty"`
 	Lat         float64    `xml:"lat,attr" json:"lat,attr"`
 	Lon         float64    `xml:"lon,attr" json:"lon,attr"`
-	Ele         float64    `xml:"ele" json:"ele"`
+	Ele         float64    `xml:"ele,omitempty" json:"ele,omitempty"`
 }
 
 type Extensions struct {
-	OGR string `xml:"ogr distance,attr" json:"ogr distance,attr"`
+	//XMLName  xml.Name   `xml:"extensions" json:"extensions"`
+	OGR []OGR `xml:",any" json:",any"`
 }
 
 type OGR struct {
-	//Key   string `xml:" ,attr" json:" ,attr"`
-	Value string `xml:"ogr distance,chardata" json:"ogr distance,chardata"`
+	//XMLName  xml.Name   `xml:"ogr,any" json:"ogr,any"`
+	Key   string `xml:"Key" json:"Key"`
+	Value string `xml:",chardata" json:",chardata"`
 }
 
-func GPXDecode(f *bytes.Buffer, gpx *GPX) {
+func GPXDecode (f *bytes.Buffer, gpx *GPX) {
 
-	// xml.Unmarshal(f, kml)
-	d := xml.NewDecoder(f)
+	xmlraw, _ := ioutil.ReadAll(f)
 
-	// gpx encodes some data as namespace eg. <ogr:key>value</ogr:key>
-	d.DefaultSpace = "_"
-
-	// place all the xml where it belongs
+	// First, build as much as we can of the GPX Struct
+	xmlbytes := bytes.NewBuffer(xmlraw)
+	d := xml.NewDecoder(xmlbytes)
 	d.Decode(gpx)
+
+	// Second, rebuild a buffer to just parse for extensions
+	xmlbytes = bytes.NewBuffer(xmlraw)
+	d = xml.NewDecoder(xmlbytes)
+
+	// set a boolean extension tracker
+	isExt := 0
+
+	// set counter for tracking # of features
+	elementNum := -1
+	extNum := 0
+
+	// parse each token, looking for extensionsy
+	for {
+		t, _ := d.Token()
+		if t == nil {
+			break
+		}
+
+		switch se := t.(type) {
+
+		case xml.StartElement:
+			// the next feature comming after will be an extension
+			if strings.Contains(se.Name.Local,"extensions") {
+				isExt = 1
+				elementNum  ++
+				extNum = 0
+				continue
+			}
+
+			// Reached a new feature, so Reset extension counter and isExt boolean
+                        nonExt := []string{"metadata","wpt","trkpt","rtept","trkseg","lon","lat","ele","name","desc"}
+                        for _, substr := range nonExt {
+                                if strings.Contains(se.Name.Local,substr) {
+                                        isExt = 0
+                                }
+                        }
+
+			// this feature is flagged as an extension (falls after prior)
+			if isExt == 1 {
+				var ogr OGR
+				ogr.Key = se.Name.Local
+
+				var frag []byte
+				if err := d.DecodeElement(&frag, &se); err != nil {
+					fmt.Printf("Error decoding token: %v\n", err.Error())
+				}
+				ogr.Value = string(frag)
+
+				gpx.Waypoint[elementNum].Extensions.OGR[extNum].Key = ogr.Key
+
+				// roll the counter
+				extNum ++
+			}
+
+		}
+
+	}
 }
